@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Gambar</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+
+<div class="bg-gray-800 p-6 rounded-2xl shadow-xl w-[400px] text-center">
+
+  <h1 class="text-xl font-bold mb-4">Upload Gambar</h1>
+
+  <!-- preview -->
+  <img id="preview" class="hidden mb-4 rounded-lg border border-gray-600"/>
+
+  <!-- input -->
+  <input type="file" id="fileInput" accept="image/*"
+    class="mb-4 w-full text-sm text-gray-300 file:bg-blue-600 file:border-0 file:px-3 file:py-2 file:rounded file:text-white">
+
+  <!-- button -->
+  <button onclick="uploadImage()"
+    class="bg-green-600 hover:bg-green-700 w-full py-2 rounded-lg">
+    Upload
+  </button>
+
+  <!-- status -->
+  <p id="status" class="mt-4 text-sm text-gray-300"></p>
+
+</div>
+
+<script>
+
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const statusText = document.getElementById("status");
+
+// preview gambar
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+
+  if (file) {
+    preview.src = URL.createObjectURL(file);
+    preview.classList.remove("hidden");
+  }
+});
+
+// upload ke backend
+async function uploadImage() {
+  const file = fileInput.files[0];
+
+  if (!file) {
+    statusText.innerText = "Pilih gambar dulu ❌";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  statusText.innerText = "Uploading... ⏳";
+
+  try {
+    const res = await fetch("http://localhost:5000/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      statusText.innerText = "Upload berhasil ✅";
+      console.log("Response:", data);
+    } else {
+      statusText.innerText = "Upload gagal ❌";
+    }
+
+  } catch (err) {
+    console.error(err);
+    statusText.innerText = "Error server ❌";
+  }
+}
+
+</script>
+
+</body>
+</html>

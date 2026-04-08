@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Presensi AI - MediaPipe</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen text-white">
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-xl w-[480px] text-center">
+    <h1 class="text-xl font-bold mb-4">Presensi Wajah</h1>
+    <video id="video" class="rounded-lg mb-4" autoplay muted playsinline width="480" height="360"></video>
+    <p id="status" class="text-sm mb-4">Klik Mulai</p>
+    <button onclick="start()" class="bg-blue-600 px-4 py-2 rounded w-full">Mulai</button>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
