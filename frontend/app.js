@@ -97,17 +97,18 @@ async function startCamera() {
 // =====================
 function capture() {
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = 480; // gunakan ukuran tetap
+  canvas.height = 360;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // pastikan resize
   const base64 = canvas.toDataURL("image/jpeg");
+  console.log("Captured image size:", base64.length); // debug
   sendToBackend(base64);
 }
 
 async function sendToBackend(image) {
   try {
-    const res = await fetch("http://localhost:5000/presensi", {
+    const res = await fetch("https://presensiwajah.onrender.com/presensi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image }),
