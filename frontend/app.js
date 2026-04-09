@@ -5,6 +5,8 @@ let state = "look"; // look -> right -> left -> done
 let xPositions = [];
 const THRESHOLD = 15; // gerakan kepala minimal
 const STABLE_FRAMES = 15; // jumlah frame wajah stabil
+let camera = null;
+let faceMeshActive = true; // flag untuk stop faceMesh ketika done
 
 // =====================
 // Inisialisasi Face Mesh
@@ -24,6 +26,8 @@ faceMesh.setOptions({
 // Event results
 // =====================
 faceMesh.onResults((results) => {
+  if (!faceMeshActive) return; // skip jika sudah done
+
   if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
     statusText.innerText = "Arahkan wajah ke kamera 👀";
     xPositions = [];
@@ -31,10 +35,9 @@ faceMesh.onResults((results) => {
   }
 
   const landmarks = results.multiFaceLandmarks[0];
-
-  // Ambil posisi hidung sebagai referensi
   const nose = landmarks[1]; // landmark hidung tip
   const x = nose.x * video.videoWidth;
+
   xPositions.push(x);
   if (xPositions.length > STABLE_FRAMES) xPositions.shift();
 
@@ -66,13 +69,16 @@ faceMesh.onResults((results) => {
       if (maxX - minX > THRESHOLD) {
         state = "done";
         statusText.innerText = "Liveness OK ✅";
-        capture();
+        faceMeshActive = false; // hentikan update selanjutnya
+        stopCamera();          // hentikan kamera
+        capture();             // kirim ke backend satu kali
       } else {
         statusText.innerText = "Gerakkan kepala ke kiri 👈";
       }
       break;
 
     case "done":
+      // sudah selesai, tidak ada update
       break;
   }
 });
@@ -80,16 +86,24 @@ faceMesh.onResults((results) => {
 // =====================
 // Start kamera
 // =====================
-let camera = null;
 async function startCamera() {
   camera = new Camera(video, {
     onFrame: async () => {
-      await faceMesh.send({ image: video });
+      if (faceMeshActive) {
+        await faceMesh.send({ image: video });
+      }
     },
     width: 480,
     height: 360
   });
-  camera.start();
+  await camera.start();
+}
+
+// =====================
+// Stop kamera
+// =====================
+function stopCamera() {
+  if (camera) camera.stop();
 }
 
 // =====================
@@ -97,12 +111,12 @@ async function startCamera() {
 // =====================
 function capture() {
   const canvas = document.createElement("canvas");
-  canvas.width = 480; // gunakan ukuran tetap
+  canvas.width = 480;
   canvas.height = 360;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // pastikan resize
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const base64 = canvas.toDataURL("image/jpeg");
-  console.log("Captured image size:", base64.length); // debug
+  console.log("Captured image size:", base64.length);
   sendToBackend(base64);
 }
 
@@ -128,6 +142,7 @@ async function sendToBackend(image) {
 async function start() {
   state = "look";
   xPositions = [];
+  faceMeshActive = true;
   statusText.innerText = "Memulai...";
   await startCamera();
   statusText.innerText = "Camera ready ✅";
