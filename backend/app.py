@@ -8,7 +8,7 @@ import numpy as np
 import mediapipe as mp
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = "uploads"
 
