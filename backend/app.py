@@ -5,6 +5,7 @@ import base64
 from datetime import datetime
 import cv2
 import numpy as np
+import mediapipe as mp
 
 app = Flask(__name__)
 CORS(app)
@@ -52,44 +53,42 @@ def upload_image():
         }), 500
 
 
+# Inisialisasi Mediapipe Face Detection
+mp_face_detection = mp.solutions.face_detection
+mp_drawing = mp.solutions.drawing_utils
+
+face_detection = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
 
 @app.route("/presensi", methods=["POST"])
 def presensi():
     try:
         data = request.get_json()
-
         if not data or "image" not in data:
             return jsonify({"status": "error", "message": "No image"}), 400
 
         image_data = data["image"]
-
         if "," not in image_data:
             return jsonify({"status": "error", "message": "Format salah"}), 400
 
         header, encoded = image_data.split(",", 1)
         file_data = base64.b64decode(encoded)
 
-        # convert ke OpenCV image
+        # Convert ke OpenCV image
         nparr = np.frombuffer(file_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        # deteksi wajah
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        )
+        # Convert BGR ke RGB untuk Mediapipe
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        faces = face_cascade.detectMultiScale(img, 1.3, 5)
+        # Deteksi wajah
+        results = face_detection.process(img_rgb)
 
-        if len(faces) == 0:
-            return jsonify({
-                "status": "error",
-                "message": "Wajah tidak terdeteksi"
-            }), 400
+        if not results.detections:
+            return jsonify({"status": "error", "message": "Wajah tidak terdeteksi"}), 400
 
-        # simpan file
+        # Simpan file
         filename = datetime.now().strftime("%Y%m%d%H%M%S") + ".jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
-
         with open(filepath, "wb") as f:
             f.write(file_data)
 
@@ -101,11 +100,7 @@ def presensi():
 
     except Exception as e:
         print("Error:", str(e))
-        return jsonify({
-            "status": "error",
-            "message": "Server error"
-        }), 500
-
+        return jsonify({"status": "error", "message": "Server error"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
